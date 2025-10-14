@@ -107,7 +107,7 @@ def run_ssh_analyzer(
             task_report.priority = result_priority
         logger.debug(f"Report priority: {result_priority}")
 
-        summary_section.add_paragraph(result_summary)
+        summary_section.add_paragraph(result_markdown)
 
         output_file = create_output_file(
             output_path,
