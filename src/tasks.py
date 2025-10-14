@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from openrelik_worker_common.reporting import Report, Priority
+from celery import signals
+from celery.utils.log import get_task_logger
 from openrelik_worker_common.file_utils import create_output_file
+from openrelik_worker_common.reporting import Priority, Report
 from openrelik_worker_common.task_utils import create_task_result, get_input_files
 
-from .ssh_analyzer import LinuxSSHAnalysisTask
-
 from .app import celery
+from .logger import log_root
+from .ssh_analyzer import LinuxSSHAnalysisTask
 
 # Task name used to register and route the task to the correct queue.
 TASK_NAME = "openrelik-worker-analyzer-logs.tasks.ssh_analyzer"
@@ -39,6 +41,17 @@ TASK_METADATA = {
         },
     ],
 }
+
+logger = log_root.get_logger(__name__, get_task_logger(__name__))
+
+
+@signals.task_prerun.connect
+def on_task_prerun(sender, task_id, task, args, kwargs, **_):
+    log_root.bind(
+        task_id=task_id,
+        task_name=task.name,
+        worker_name=TASK_METADATA.get("display_name"),
+    )
 
 
 @celery.task(bind=True, name=TASK_NAME, metadata=TASK_METADATA)
@@ -62,6 +75,9 @@ def run_ssh_analyzer(
     Returns:
         Base64-encoded dictionary containing task results.
     """
+    log_root.bind(workflow_id=workflow_id)
+    logger.info(f"Starting {TASK_NAME} for workflow {workflow_id}")
+
     input_files = get_input_files(pipe_result, input_files or [])
     output_files = []
 
@@ -76,6 +92,9 @@ def run_ssh_analyzer(
     ssh_analysis_task = LinuxSSHAnalysisTask(log_year=log_year)
     analyzer_output_priority = Priority.LOW
 
+    # Indicate task progress start.
+    self.send_event("task-progress")
+
     df = ssh_analysis_task.read_logs(input_files=input_files)
     if df.empty:
         summary_section.add_paragraph("No SSH authentication events in input files.")
@@ -84,8 +103,10 @@ def run_ssh_analyzer(
         (result_priority, result_summary, result_markdown) = (
             ssh_analysis_task.brute_force_analysis(df)
         )
-        if result_priority < analyzer_output_priority:
-            analyzer_output_priority = result_priority
+        if result_priority > analyzer_output_priority:
+            task_report.priority = result_priority
+        logger.debug(f"Report priority: {result_priority}")
+
         summary_section.add_paragraph(result_summary)
 
         output_file = create_output_file(

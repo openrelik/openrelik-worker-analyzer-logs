@@ -13,10 +13,6 @@
 # limitations under the License.
 """A class to store analyzer output"""
 
-import logging
-
-log = logging.getLogger(__name__)
-
 
 class AnalyzerOutput:
     """A class to record analyzer output.
