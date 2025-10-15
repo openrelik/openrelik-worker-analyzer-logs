@@ -21,6 +21,7 @@ from fakeredis import FakeStrictRedis
 
 from src.tasks import run_ssh_analyzer
 
+
 _INPUT_FILES = [
     {
         "id": 1,
@@ -58,7 +59,7 @@ _INPUT_FILES_WITHOUT_SSH_EVENTS = [
 class TestTasks:
     redis_client = FakeStrictRedis(server_type="redis")
 
-    @patch("src.app.redis.Redis.from_url")
+    @patch("redis.Redis.from_url")
     def test_run_ssh_analyzer(self, mock_redisclient):
         """Test LinuxSSHAnalysis task run."""
         mock_redisclient.return_value = self.redis_client
@@ -76,8 +77,10 @@ class TestTasks:
             output_path, "test_data/linux_ssh_analysis.md", shallow=False
         )
 
-    def test_task_report_no_ssh_events(self):
+    @patch("redis.Redis.from_url")
+    def test_task_report_no_ssh_events(self, mock_redisclient):
         """Test for proper task report summary."""
+        mock_redisclient.return_value = self.redis_client
 
         output = run_ssh_analyzer(
             input_files=_INPUT_FILES_WITHOUT_SSH_EVENTS,
@@ -92,8 +95,10 @@ class TestTasks:
             "No SSH authentication events in input files." in output_task_report_summary
         )
 
-    def test_task_report_no_bruteforce(self):
+    @patch("redis.Redis.from_url")
+    def test_task_report_no_bruteforce(self, mock_redisclient):
         """Test for proper task report summary."""
+        mock_redisclient.return_value = self.redis_client
 
         output = run_ssh_analyzer(
             input_files=_INPUT_FILES_SSH_EVENTS_NO_BRUTEFORCE,
