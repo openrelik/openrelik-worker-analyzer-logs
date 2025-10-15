@@ -13,8 +13,12 @@
 # limitations under the License.
 
 import base64
-import json
 import filecmp
+import json
+from unittest.mock import patch
+
+from fakeredis import FakeStrictRedis
+
 from src.tasks import run_ssh_analyzer
 
 _INPUT_FILES = [
@@ -52,8 +56,12 @@ _INPUT_FILES_WITHOUT_SSH_EVENTS = [
 
 
 class TestTasks:
-    def test_run_ssh_analyzer(self):
+    redis_client = FakeStrictRedis(server_type="redis")
+
+    @patch("src.app.redis.Redis.from_url")
+    def test_run_ssh_analyzer(self, mock_redisclient):
         """Test LinuxSSHAnalysis task run."""
+        mock_redisclient.return_value = self.redis_client
 
         output = run_ssh_analyzer(
             input_files=_INPUT_FILES,

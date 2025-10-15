@@ -15,7 +15,8 @@ pyparsing = "^3.2.0"
 debugpy = "^1.8.7"
 openrelik-common = "^0.7.0"
 
-[tool.poetry.group.test.dependencies]  
+[tool.poetry.group.test.dependencies] 
+fakeredis = "^2.32.0"
 pytest = "^7.4"  
 pytest-cov = "*"  
 
