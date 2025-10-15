@@ -15,16 +15,13 @@
 import base64
 import filecmp
 import json
+import time
+from threading import Thread
 from unittest.mock import patch
 
 from fakeredis import TcpFakeServer
-from threading import Thread
 
 from src.tasks import run_ssh_analyzer
-
-import contextlib
-import redis
-import time
 
 _INPUT_FILES = [
     {
@@ -60,8 +57,7 @@ _INPUT_FILES_WITHOUT_SSH_EVENTS = [
 ]
 
 
-# @contextlib.contextmanager
-# def run_fake_server(server_address):
+# Start fake redis server for tests
 server_address = ("127.0.0.1", 6379)
 server = TcpFakeServer(server_address, server_type="redis")
 server_thread = Thread(target=server.serve_forever, daemon=True)
@@ -69,22 +65,12 @@ server_thread.daemon = True
 server_thread.start()
 # Wait for the server thread to start
 time.sleep(0.1)
-# try:
-#     # Yield the server or a client connection
-#     yield redis.Redis(host=server_address[0], port=server_address[1])
-# finally:
-#     server.shutdown()
-#     server.server_close()
-#     server_thread.join()
 
 
 class TestTasks:
     @patch("src.app.redis.Redis.from_url")
     def test_run_ssh_analyzer(self, mock_redisclient):
         """Test LinuxSSHAnalysis task run."""
-        # with run_fake_server(self.server_address) as redis_client:
-        # Configure the mock to return the connected fake redis client
-        # mock_redisclient.return_value = redis_client
 
         output = run_ssh_analyzer(
             input_files=_INPUT_FILES,
@@ -102,9 +88,6 @@ class TestTasks:
     @patch("src.app.redis.Redis.from_url")
     def test_task_report_no_ssh_events(self, mock_redisclient):
         """Test for proper task report summary."""
-        # with run_fake_server(self.server_address) as redis_client:
-        #     # Configure the mock to return the connected fake redis client
-        #     mock_redisclient.return_value = redis_client
 
         output = run_ssh_analyzer(
             input_files=_INPUT_FILES_WITHOUT_SSH_EVENTS,
@@ -122,9 +105,6 @@ class TestTasks:
     @patch("src.app.redis.Redis.from_url")
     def test_task_report_no_bruteforce(self, mock_redisclient):
         """Test for proper task report summary."""
-        # with run_fake_server(self.server_address) as redis_client:
-        #     # Configure the mock to return the connected fake redis client
-        #     mock_redisclient.return_value = redis_client
 
         output = run_ssh_analyzer(
             input_files=_INPUT_FILES_SSH_EVENTS_NO_BRUTEFORCE,
@@ -135,4 +115,7 @@ class TestTasks:
 
         output_dict = json.loads(base64.b64decode(output))
         output_task_report_summary = output_dict.get("task_report").get("content")
-        assert "No findings for brute force analysis" in output_task_report_summary
+        assert (
+            "# SSH log analyzer report\n\n\n##### Brute force analysis\n\n- No findings\n"
+            in output_task_report_summary
+        )
