@@ -62,11 +62,7 @@ _INPUT_FILES_WITHOUT_SSH_EVENTS = [
 
 @contextlib.contextmanager
 def run_fake_server(server_address):
-    server = None
-    try:
-        server = TcpFakeServer(server_address, server_type="redis")
-    except OSError:
-        pass
+    server = TcpFakeServer(server_address, server_type="redis")
     server_thread = Thread(target=server.serve_forever, daemon=True)
     server_thread.daemon = True
     server_thread.start()
