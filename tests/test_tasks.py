@@ -13,8 +13,14 @@
 # limitations under the License.
 
 import base64
-import json
 import filecmp
+import json
+import time
+from threading import Thread
+from unittest.mock import patch
+
+from fakeredis import TcpFakeServer
+
 from src.tasks import run_ssh_analyzer
 
 _INPUT_FILES = [
@@ -51,8 +57,19 @@ _INPUT_FILES_WITHOUT_SSH_EVENTS = [
 ]
 
 
+# Start fake redis server for tests
+server_address = ("127.0.0.1", 6379)
+server = TcpFakeServer(server_address, server_type="redis")
+server_thread = Thread(target=server.serve_forever, daemon=True)
+server_thread.daemon = True
+server_thread.start()
+# Wait for the server thread to start
+time.sleep(0.1)
+
+
 class TestTasks:
-    def test_run_ssh_analyzer(self):
+    @patch("src.app.redis.Redis.from_url")
+    def test_run_ssh_analyzer(self, mock_redisclient):
         """Test LinuxSSHAnalysis task run."""
 
         output = run_ssh_analyzer(
@@ -68,7 +85,8 @@ class TestTasks:
             output_path, "test_data/linux_ssh_analysis.md", shallow=False
         )
 
-    def test_task_report_no_ssh_events(self):
+    @patch("src.app.redis.Redis.from_url")
+    def test_task_report_no_ssh_events(self, mock_redisclient):
         """Test for proper task report summary."""
 
         output = run_ssh_analyzer(
@@ -84,7 +102,8 @@ class TestTasks:
             "No SSH authentication events in input files." in output_task_report_summary
         )
 
-    def test_task_report_no_bruteforce(self):
+    @patch("src.app.redis.Redis.from_url")
+    def test_task_report_no_bruteforce(self, mock_redisclient):
         """Test for proper task report summary."""
 
         output = run_ssh_analyzer(
@@ -96,4 +115,7 @@ class TestTasks:
 
         output_dict = json.loads(base64.b64decode(output))
         output_task_report_summary = output_dict.get("task_report").get("content")
-        assert "No findings for brute force analysis" in output_task_report_summary
+        assert (
+            "# SSH log analyzer report\n\n\n##### Brute force analysis\n\n- No findings\n"
+            in output_task_report_summary
+        )

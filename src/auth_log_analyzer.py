@@ -16,16 +16,16 @@
 """Base authentication analyzer"""
 
 import copy
-import logging
 from datetime import datetime, timezone
 from typing import List, Tuple
 
 import pandas as pd
-
 from openrelik_worker_common.reporting import Priority
-from .analyzer_output import AnalyzerOutput
 
-log = logging.getLogger(__name__)
+from .analyzer_output import AnalyzerOutput
+from .logger import log_root
+
+log = log_root.get_logger(__name__)
 
 
 class LoginRecord:
@@ -826,8 +826,7 @@ class BruteForceAnalyzer(AuthAnalyzer):
 
             for login in summary.successful_logins:
                 if login.session_duration >= self.BRUTE_FORCE_MIN_ACCESS_DURATION:
-                    if priority > Priority.CRITICAL:
-                        priority = Priority.CRITICAL
+                    priority = Priority.CRITICAL
 
             # Markdown report generation
             markdown_summaries.append(
@@ -872,7 +871,7 @@ class BruteForceAnalyzer(AuthAnalyzer):
 
         if result_summaries:
             output.result_summary = ", ".join(result_summaries)
-            if priority > Priority.HIGH:
+            if priority < Priority.CRITICAL:
                 priority = Priority.HIGH
 
         if markdown_summaries:

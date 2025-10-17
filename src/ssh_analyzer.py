@@ -12,19 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import hashlib
-import logging
-import re
-import pyparsing
-import pandas as pd
 import gzip
-
+import hashlib
+import re
 from datetime import datetime, timezone
-from typing import Tuple, List
-from .auth_log_analyzer import BruteForceAnalyzer
+from typing import List, Tuple
+
+import pandas as pd
+import pyparsing
 from openrelik_worker_common.reporting import Priority
 
-log = logging.getLogger(__name__)
+from .auth_log_analyzer import BruteForceAnalyzer
+from .logger import log_root
+
+log = log_root.get_logger(__name__)
 
 
 class SSHEventData:
@@ -385,7 +386,7 @@ class LinuxSSHAnalysisTask:
 
                         ssh_records.append(ssh_event_data)
                     except pyparsing.ParseException as e:
-                        log.debug("Pyparsing parsing exception: %s", {str(e)})
+                        # log.debug("Pyparsing parsing exception: %s", {str(e)})
                         continue
 
         log.info("Total number of SSH records %d in %s", len(ssh_records), log_filename)
