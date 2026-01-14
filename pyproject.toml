@@ -1,28 +1,28 @@
-[tool.poetry]
+[project]
 name = "openrelik-worker-template"
-version = "2024.11.27"
+version = "2026.01.14"
 description = "SSH login analyzer"
-authors = ["Slobodan Popović <spop@google.com>"]
+authors = [{ name = "Slobodan Popović", email = "spop@google.com" }]
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
-package-mode = false
+dependencies = [
+    "celery[redis]>=5.4.0,<6",
+    "openrelik-worker-common>=0.17.1,<1.0.0",
+    "pandas>=2.2.3,<3",
+    "pyparsing>=3.2.0,<4",
+    "debugpy>=1.8.7,<2",
+    "openrelik-common>=0.7.0,<1.0.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.11,<4.0"
-celery = {extras = ["redis"], version = "^5.4.0"}
-openrelik-worker-common = "^0.17.1"
-pandas = "^2.2.3"
-pyparsing = "^3.2.0"
-debugpy = "^1.8.7"
-openrelik-common = "^0.7.0"
+[dependency-groups]
+test = [
+    "fakeredis>=2.32.0,<3",
+    "pytest>=7.4,<8",
+    "pytest-cov",
+]
 
-[tool.poetry.group.test.dependencies] 
-fakeredis = "^2.32.0"
-pytest = "^7.4"  
-pytest-cov = "*"  
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv]
+default-groups = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
