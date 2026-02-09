@@ -1,6 +1,6 @@
 > [!CAUTION]  
 > # NOTICE - DO NOT USE
-> This repository has been archived and moved to https://github.com/openrelik/openrelik-workers/}
+> This repository has been archived and moved to https://github.com/openrelik/openrelik-workers/
 
 
 [![codecov](https://codecov.io/github/openrelik/openrelik-worker-analyzer-logs/graph/badge.svg?token=U1OAOQSX7K)](https://codecov.io/github/openrelik/openrelik-worker-analyzer-logs)
